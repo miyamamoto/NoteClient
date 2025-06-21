@@ -4,11 +4,14 @@ from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.firefox.options import Options
+from selenium.webdriver.firefox.service import Service
 from janome.tokenizer import Tokenizer
 from time import sleep
 from random import randint
 import builtins
 import re
+import platform
+import os
 
 class Note:
 
@@ -43,10 +46,41 @@ class Note:
 
         options = Options()
         if headless:
-            # selenium>=4.8.0
-            options.add_argument("--headless=new")
+            # More aggressive headless settings to prevent any visual display
+            options.add_argument("--headless")
+            options.add_argument("--no-sandbox")
+            options.add_argument("--disable-dev-shm-usage")
+            options.add_argument("--disable-gpu")
+            options.add_argument("--disable-extensions")
+            options.add_argument("--disable-web-security")
+            options.add_argument("--disable-features=VizDisplayCompositor")
+            options.add_argument("--window-size=1920,1080")
+            options.add_argument("--start-maximized")
+            options.add_argument("--disable-infobars")
+            options.add_argument("--disable-notifications")
+            options.add_argument("--disable-default-apps")
+            # Firefox-specific preferences to ensure complete headless operation
+            options.set_preference("dom.webnotifications.enabled", False)
+            options.set_preference("dom.push.enabled", False)
 
-        driver = webdriver.Firefox(options=options)
+        # Cross-platform WebDriver setup for Mac ARM and Intel
+        service = None
+        try:
+            # Try to use system's geckodriver first
+            driver = webdriver.Firefox(options=options)
+        except Exception as e:
+            # If system geckodriver fails, try to use webdriver-manager
+            try:
+                from webdriver_manager.firefox import GeckoDriverManager
+                service = Service(GeckoDriverManager().install())
+                driver = webdriver.Firefox(service=service, options=options)
+            except ImportError:
+                # If webdriver-manager is not available, provide helpful error
+                system_info = f"Platform: {platform.system()}, Architecture: {platform.machine()}"
+                raise Exception(f"Firefox WebDriver setup failed. {system_info}\n"
+                              f"Please install geckodriver or webdriver-manager:\n"
+                              f"  brew install geckodriver  # For macOS\n"
+                              f"  pip install webdriver-manager  # Alternative option")
         driver.get('https://note.com/login?redirectPath=%2Fnotes%2Fnew')
 
         wait = WebDriverWait(driver, 10)

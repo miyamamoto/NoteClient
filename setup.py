@@ -7,7 +7,8 @@ setup(
     packages=find_packages(),
     install_requires=[
         'selenium>=4.12.0',
-        'janome>=0.5.0'
+        'janome>=0.5.0',
+        'webdriver-manager>=3.8.0'
     ],
     author='Nao Matsukami',
     author_email='info@mr-insane.net',
